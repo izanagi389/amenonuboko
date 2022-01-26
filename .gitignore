@@ -1,3 +1,5 @@
-static/
 .env
 __pycache__/
+db/
+model/cl_tohoku/
+model/transformers/
