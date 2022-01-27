@@ -1,11 +1,14 @@
-import app.lib.transformers.model as transformers_model_lib
-from app.lib.db.title_model import init_data
+from apscheduler.schedulers.blocking import BlockingScheduler
 
-def scheduler():
+import app.touch_model as transformers_model_lib
+from app import crud
+
+def init():
     transformers_model_lib.initialize_cl_tohoku_load()
-    init_data()
+    crud.init_data()
 
 
+scheduler = BlockingScheduler()
 
-
+scheduler.add_job(init, 'interval', days=1)
 

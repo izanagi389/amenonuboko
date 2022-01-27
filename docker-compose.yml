@@ -1,14 +1,13 @@
 version: '3'
 services:
-  related_text_searcher:
-    container_name: related_text_searcher
+  related_title_searcher:
     build:
       context: ./
     ports:
       - 8000:5000
     volumes:
-      - .:/related_text_searcher
-    working_dir: /related_text_searcher
+      - .:/related_title_searcher
+    working_dir: /related_title_searcher
     tty: true
     # platform: linux/amd64
 
