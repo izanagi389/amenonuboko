@@ -53,12 +53,12 @@ def read_root():
     return json.dumps(["パスが間違っています！"], indent=2, ensure_ascii=False)
 
 
-@app.get("/api/v1/releted_title/")
+@app.get("/api/v1/related_title/")
 def read_root():
     return json.dumps(["パスパラメーターにブログIDを指定してください！"], indent=2, ensure_ascii=False)
 
 
-@app.get("/api/v1/releted_title/{search_id}")
+@app.get("/api/v1/related_title/{search_id}")
 def read_item(search_id: str):
     print(search_id)
     if (search_id == None):

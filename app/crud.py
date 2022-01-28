@@ -18,7 +18,7 @@ def get_db():
 
 
 def get_related_titles(search_id: str):
-    query = "select id, title, '{}' from related_text.contents".format(search_id)
+    query = "select id, title, `{}` from related_text.contents".format(search_id)
     df = pd.read_sql(query, con=engine)
 
     # return df.sort_values(search_id, ascending=False)[:5].rename(columns={search_id: 'score'}).to_json(orient='records', force_ascii=False)
