@@ -5,6 +5,7 @@ from fastapi import FastAPI, BackgroundTasks
 from fastapi.openapi.utils import get_openapi
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi_utils.tasks import repeat_every
 import json
 
 from app import crud, scheduler
@@ -38,9 +39,11 @@ app.add_middleware(
 )
 
 
-def init(background_tasks: BackgroundTasks):
-    background_tasks.add_task(
-        scheduler.scheduler.start(), message="some notification")
+@app.on_event("startup")
+@repeat_every(seconds=60 * 60 * 24)
+def startup_event():
+    print('Start')
+    BackgroundTasks().add_task(scheduler.init())
 
 
 @app.get("/api/")

@@ -10,6 +10,7 @@ class Math:
     def sentence_vector(self, text):
         # 文章ベクトル作成
         max_length = 256
+        print(text + ":vector creating")
 
         encoding = self.tknz(
             text,
@@ -19,7 +20,7 @@ class Math:
             return_tensors='pt'
         )
 
-        encoding = {k: torch.tensor(v) for k, v in encoding.items()}
+        encoding = {k: v.clone().detach() for k, v in encoding.items()}
         attention_mask = encoding['attention_mask']
 
         with torch.no_grad():
@@ -28,4 +29,5 @@ class Math:
             averaged_hidden_state = (
                 last_hidden_state * attention_mask.unsqueeze(-1)).sum(1) / attention_mask.sum(1, keepdim=True)
 
+        print(text + ":vector created")
         return averaged_hidden_state[0].cpu().to(torch.float64).detach().numpy().copy()
