@@ -9,7 +9,6 @@ services:
       - .:/related_title_searcher
     working_dir: /related_title_searcher
     tty: true
-    # platform: linux/amd64
 
   db:
     image: mysql:5.7

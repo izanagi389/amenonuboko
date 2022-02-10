@@ -18,10 +18,10 @@ RUN apt update && apt install -y \
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
 ENV PATH="/root/.cargo/bin:$PATH"
 
+RUN /usr/local/bin/python -m pip install --upgrade pip
 
-COPY requirements.txt requirements.txt
-RUN pip install -r requirements.txt
+RUN pip install uvicorn torch torchaudio torchvision SQLAlchemy python-dotenv PyMySQL ipadic fugashi fastapi-utils fastapi transformers pandas
 
 ENV HOST 0.0.0.0
 
-# CMD ["python", "main.py"]
+CMD ["uvicorn", "main:app", "--reload", "--host", "0.0.0.0", "--port", "5000"]
