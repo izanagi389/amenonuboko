@@ -1,8 +1,8 @@
-FROM python:3.8.6
+FROM python:latest
 
 WORKDIR /related_title_searcher
 
-RUN apt update && apt install -y \
+RUN apt update && apt upgrade -y && apt install -y \
   sudo \
   wget \
   vim \
@@ -24,4 +24,4 @@ RUN pip install uvicorn torch torchaudio torchvision SQLAlchemy python-dotenv Py
 
 ENV HOST 0.0.0.0
 
-CMD ["uvicorn", "main:app", "--reload", "--host", "0.0.0.0", "--port", "5000"]
+# CMD ["uvicorn", "main:app", "--reload", "--host", "0.0.0.0", "--port", "5000"]

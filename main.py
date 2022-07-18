@@ -46,22 +46,22 @@ def startup_event():
     BackgroundTasks().add_task(scheduler.init())
 
 
-@app.get("/api/")
+@app.get("/related_title_searcher/")
 def read_root():
     return json.dumps(["こちらは関連のブログタイトル抽出APIです。"], indent=2, ensure_ascii=False)
 
 
-@app.get("/api/v1/")
+@app.get("/related_title_searcher/v1/")
 def read_root():
     return json.dumps(["パスが間違っています！"], indent=2, ensure_ascii=False)
 
 
-@app.get("/api/v1/related_title/")
+@app.get("/related_title_searcher/v1/related_title/")
 def read_root():
     return json.dumps(["パスパラメーターにブログIDを指定してください！"], indent=2, ensure_ascii=False)
 
 
-@app.get("/api/v1/related_title/{search_id}")
+@app.get("/related_title_searcher/v1/related_title/{search_id}")
 def read_item(search_id: str):
     print(search_id)
     if (search_id == None):

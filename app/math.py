@@ -29,5 +29,4 @@ class Math:
             averaged_hidden_state = (
                 last_hidden_state * attention_mask.unsqueeze(-1)).sum(1) / attention_mask.sum(1, keepdim=True)
 
-        print(text + ":vector created")
         return averaged_hidden_state[0].cpu().to(torch.float64).detach().numpy().copy()
