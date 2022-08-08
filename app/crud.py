@@ -47,7 +47,6 @@ def init_data():
 
 
     for l in list(itertools.combinations(df["id"].values.tolist(), 2)):
-        print(l)
         v1 = df[df['id'] == l[0]]["score"]
         v1 = v1.iloc[-1]
         v2 = df[df['id'] == l[1]]["score"]

@@ -46,22 +46,22 @@ def startup_event():
     BackgroundTasks().add_task(scheduler.init())
 
 
-@app.get("/related_title_searcher/")
+@app.get("/amenonuboko/")
 async def read_root():
     return json.dumps(["こちらは関連のブログタイトル抽出APIです。"], indent=2, ensure_ascii=False)
 
 
-@app.get("/related_title_searcher/v1/")
+@app.get("/amenonuboko/v1/")
 async def read_root():
     return json.dumps(["パスが間違っています！"], indent=2, ensure_ascii=False)
 
 
-@app.get("/related_title_searcher/v1/related_title/")
+@app.get("/amenonuboko/v1/related_title/")
 async def read_root():
     return json.dumps(["パスパラメーターにブログIDを指定してください！"], indent=2, ensure_ascii=False)
 
 
-@app.get("/related_title_searcher/v1/related_title/{search_id}")
+@app.get("/amenonuboko/v1/related_title/{search_id}")
 async def read_item(search_id: str):
     if (search_id == None):
         return json.dumps(["パラメータがありません！"], indent=2, ensure_ascii=False)
