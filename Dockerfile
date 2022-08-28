@@ -20,8 +20,8 @@ ENV PATH="/root/.cargo/bin:$PATH"
 
 RUN /usr/local/bin/python -m pip install --upgrade pip
 
-RUN pip install uvicorn torch torchaudio torchvision SQLAlchemy python-dotenv PyMySQL ipadic fugashi fastapi-utils fastapi transformers pandas
+RUN pip install uvicorn torch torchaudio torchvision SQLAlchemy python-dotenv PyMySQL ipadic fugashi fastapi-utils fastapi transformers pandas gensim beautifulsoup4 scipy sudachipy sudachidict_full
 
 ENV HOST 0.0.0.0
 
-# CMD ["uvicorn", "main:app", "--reload", "--host", "0.0.0.0", "--port", "5000"]
+# CMD ["uvicorn", "main:app", "--reload", "--host", "0.0.0.0", "--port", "6000"]
