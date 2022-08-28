@@ -50,7 +50,7 @@ class LDA():
 
 
 
-    def get_corpas(dictionary, docs):
+    def get_corpus(dictionary, docs):
         # Bag-of-words representation of the documents.
         corpus = [dictionary.doc2bow(doc) for doc in docs]
 
