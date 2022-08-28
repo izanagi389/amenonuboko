@@ -1,5 +1,3 @@
-
-import string
 from bs4 import BeautifulSoup
 import re
 
@@ -25,6 +23,16 @@ class TextShapping:
     def remove_url(str: str) -> str:
         str = re.sub(r'http\S+', '', str, flags=re.MULTILINE)
         return str
+
+    def remove_unnecessary_text(str: str) -> str:
+        str = re.sub(r'http\S+', '', str, flags=re.MULTILINE)
+        str = re.sub(r'みなさんこんにちは！イザナギです。', '', str, flags=re.MULTILINE)
+        str = re.sub(r'みなさんこんにちは！', '', str, flags=re.MULTILINE)
+        str = re.sub(r'イザナギです！', '', str, flags=re.MULTILINE)
+        str = re.sub(r'イザナギです。', '', str, flags=re.MULTILINE)
+        return str
+
+
 
     # def remove_stop_words(self, str: str) -> str:
         
