@@ -31,12 +31,28 @@ class crud():
         finally:
             db.close()
 
-
     def get_data_for_df(self, query_string: str) -> DataFrame:
         df = pd.read_sql(query_string, con=self.engine)
 
         return df
 
-
     def add_data_for_df(self, df: DataFrame, table_name: str):
         df.to_sql(table_name, self.engine, index=False, if_exists='replace')
+
+    def get_topic_data_for_df(self, search_id: str):
+        database = config.MYSQL_DATABASE
+        table_name = "topic_corpus"
+        query = "select id, corpus from {}.{} where id = '{}'".format(
+            database, table_name, search_id)
+        df = pd.read_sql(query, con=self.engine)
+
+        return df.to_dict(orient='records')[0]
+
+    def get_relate_score_for_df(self, search_id: str):
+        database = config.MYSQL_DATABASE
+        table_name = "related_data_v2"
+        query = "select id, relate_id, relate_title, bert_cos_distance from {}.{} where id = '{}'".format(
+            database, table_name, search_id)
+        df = pd.read_sql(query, con=self.engine)
+
+        return df
