@@ -1,9 +1,10 @@
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 
 import config
-from app.routers import main_router, related_title, tags
+from app.routers import main_router, related_title, tags, my_events
 
 app = FastAPI()
 
@@ -30,6 +31,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# app.add_middleware(
+#     TrustedHostMiddleware, allowed_hosts=["config.SITE_ROOT_URL"],
+# )
+
 app.include_router(main_router.router)
 app.include_router(related_title.router)
 app.include_router(tags.router)
+app.include_router(my_events.router)
