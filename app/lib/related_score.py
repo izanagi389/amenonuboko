@@ -48,7 +48,6 @@ class create_score():
 
         print(df_new)
         crud().add_data_for_df(df_new, "related_data_v2")
-        print("h")
 
     def get_scores(self, num: int, search_id: str):
 
