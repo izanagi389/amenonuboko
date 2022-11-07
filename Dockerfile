@@ -1,4 +1,4 @@
-FROM python:latest
+FROM python:3.9
 
 WORKDIR /related_title_searcher
 
@@ -24,4 +24,4 @@ RUN pip install uvicorn torch torchaudio torchvision SQLAlchemy python-dotenv Py
 
 ENV HOST 0.0.0.0
 
-# CMD ["uvicorn", "main:app", "--reload", "--host", "0.0.0.0", "--port", "6000"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "6000"]

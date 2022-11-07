@@ -22,6 +22,7 @@ class topic():
         docs = morphology.Tokenize(docs)
         docs = TextShapping.remove_numbers(docs)
         docs = TextShapping.remove_one_word(docs)
+        docs = TextShapping.remove_stop_words(docs)
         
         docs = LDA.bigram2docs(docs)
         dictionary = LDA.get_dictionary(docs)
