@@ -7,7 +7,7 @@ class LDA():
     def __init__(self):
         return
 
-    def load(dictionary, corpus, num_topics=5, chunksize=2000, passes=10, iterations=400, eval_every=None):
+    def load(dictionary, corpus, num_topics=5, passes=10, iterations=400, eval_every=None):
         # Make an index to word dictionary.
         temp = dictionary[0]  # This is only to "load" the dictionary.
         id2word = dictionary.id2token
@@ -15,7 +15,6 @@ class LDA():
         model = LdaModel(
             corpus=corpus,
             id2word=id2word,
-            chunksize=chunksize,
             alpha='auto',
             eta='auto',
             iterations=iterations,
