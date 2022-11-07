@@ -11,7 +11,6 @@ def getData(url, api_key, columns):
         res.raise_for_status()
 
         data = res.json()
-        t = TextShapping()
         for content in data["contents"]:
             content_list = []
             for column in columns:
@@ -23,7 +22,6 @@ def getData(url, api_key, columns):
 
                     str = TextShapping.remove_html_tag(str)
                     str = TextShapping.remove_url(str)
-                    # str = TextShapping().remove_stop_words(str)
                     content_list.append(str)
                 else:
                     content_list.append(content[column])
