@@ -11,7 +11,7 @@ def init():
 
     url = config.MICROCMS_URL + "?limit=" + config.LIMIT
     api_key = config.MICROCMS_API_KEY
-    columns = ["id", "title", "blogContent"]
+    columns = ["id", "title", "blogContent", "tags"]
 
     content_list = m.getData(url, api_key, columns)
 

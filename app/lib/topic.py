@@ -5,6 +5,7 @@ from app.lib.text.shape import TextShapping
 import app.lib.morphology.sudachi as morphology
 from app.db.sqlalchemy.crud import crud
 import re
+import numpy as np
 
 
 class topic():
@@ -12,10 +13,11 @@ class topic():
     def __init__(self):
         return
 
-    def start(self, content_list :list):
-
-        df_contents = pd.DataFrame(content_list, columns=["id", "title", "blogContent"])
-        df_contents["blogContent"] = df_contents["blogContent"].apply(lambda x: TextShapping.remove_unnecessary_text(x))
+    def start(self, content_list: list):
+        df_contents = pd.DataFrame(content_list, columns=[
+                                   "id", "title", "blogContent", "tags"])
+        df_contents["blogContent"] = df_contents["blogContent"].apply(
+            lambda x: TextShapping.remove_unnecessary_text(x))
 
         docs = list(df_contents["blogContent"])
 
@@ -23,7 +25,7 @@ class topic():
         docs = TextShapping.remove_numbers(docs)
         docs = TextShapping.remove_one_word(docs)
         docs = TextShapping.remove_stop_words(docs)
-        
+
         docs = LDA.bigram2docs(docs)
         dictionary = LDA.get_dictionary(docs)
         corpus = LDA.get_corpus(dictionary, docs)
@@ -38,7 +40,12 @@ class topic():
 
         pattern = re.compile("|".join(topics))
 
-        df_contents["corpus"] = df_contents["blogContent"].apply(lambda x :",".join(list(set(re.findall(pattern, x)))) if bool(pattern.search(x)) else "")
+        df_contents["corpus"] = df_contents["blogContent"].apply(lambda x: ",".join(
+            list(set(re.findall(pattern, x)))) if bool(pattern.search(x)) else "")
         df_contents = df_contents.drop('blogContent', axis=1)
-        df_contents = df_contents.drop('title', axis=1)
+
+
+        df_contents["corpus"] = df_contents["tags"].str.cat(
+            df_contents["corpus"])
+        
         crud().add_data_for_df(df_contents, "topic_corpus")
