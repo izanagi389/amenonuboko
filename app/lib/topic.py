@@ -13,9 +13,8 @@ class topic():
     def __init__(self):
         return
 
-    def start(self, content_list: list):
-        df_contents = pd.DataFrame(content_list, columns=[
-                                   "id", "title", "blogContent", "tags"])
+    def start(self, content_list: list, columns: list):
+        df_contents = pd.DataFrame(content_list, columns=columns)
         df_contents["blogContent"] = df_contents["blogContent"].apply(
             lambda x: TextShapping.remove_unnecessary_text(x))
 

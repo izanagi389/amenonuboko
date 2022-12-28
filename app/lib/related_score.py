@@ -13,10 +13,9 @@ class create_score():
     def __init__(self):
         return
 
-    def start(self, content_list: list):
+    def start(self, content_list: list, columns: list):
 
-        df_contents = pd.DataFrame(content_list, columns=[
-                                   "id", "title", "blogContent"])
+        df_contents = pd.DataFrame(content_list, columns=columns)
 
         df_new = pd.DataFrame(list(itertools.product(
             df_contents["id"], df_contents["id"])), columns=["id", "relate_id"])
@@ -36,6 +35,7 @@ class create_score():
         query_embeddings = sentence_vectors.numpy()
 
         for query, query_embedding in zip(queries, query_embeddings):
+            
             distances = scipy.spatial.distance.cdist(
                 [query_embedding], sentence_vectors, metric="cosine")[0]
             results = zip(range(len(distances)), distances)

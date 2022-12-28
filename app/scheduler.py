@@ -5,6 +5,7 @@ from app.lib.related_score import create_score
 import datetime
 import config
 
+
 def init():
 
     print("Scheduling Start! at {}".format(datetime.datetime.today()))
@@ -17,10 +18,10 @@ def init():
 
     # トピックコーパスの作成
     print("Creating Topic Corpus")
-    topic().start(content_list)
+    topic().start(content_list, columns)
     print("Created Topic Corpus")
 
     # 関連記事のスコア作成（v2）
     print("Creating Related Score")
-    create_score().start(content_list)
+    create_score().start(content_list, columns)
     print("Created Related Score")
