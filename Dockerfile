@@ -24,4 +24,4 @@ RUN pip install sentencepiece uvicorn torch torchaudio torchvision SQLAlchemy py
 
 ENV HOST 0.0.0.0
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "6000"]
+# CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "6000"]
