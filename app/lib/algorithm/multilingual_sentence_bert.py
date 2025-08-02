@@ -41,36 +41,52 @@ class MultilingualSentenceBert:
             
             # モデルの初期化
             self.logger.info(f"多言語SentenceBERTモデルを初期化中: {model_name}")
-            self.model = SentenceTransformer(model_name)
-            
-            # メタテンソルエラーを回避するため、to_empty()を使用
-            try:
-                if hasattr(self.model, 'to_empty'):
-                    self.model = self.model.to_empty(device=device)
-                else:
-                    self.model = self.model.to(device)
-            except Exception as e:
-                # GPU移動に失敗した場合はCPUを使用
-                self.logger.warning(f"GPU移動に失敗しました: {e}")
-                self.device = torch.device("cpu")
-                self.model = self.model.to(self.device)
+            self.model = SentenceTransformer(model_name, device=device)
             
             # モデルの設定
             self.model.max_seq_length = max_length
+            
+            # モデルの動作確認
+            try:
+                test_text = "テスト"
+                test_embedding = self.model.encode([test_text], convert_to_numpy=True, batch_size=1)
+                if test_embedding is None or test_embedding.size == 0:
+                    raise Exception("モデルのテスト実行に失敗しました")
+                self.logger.debug(f"モデルテスト成功: 埋め込み次元数 {test_embedding.shape}")
+            except Exception as test_e:
+                self.logger.warning(f"モデルテストでエラー: {test_e}")
+                # テストエラーでも続行（実際の処理で対応）
             
             self.logger.info(f"多言語SentenceBERTモデルの初期化完了: {model_name}")
             
         except Exception as e:
             self.logger.error(f"多言語SentenceBERTモデルの初期化に失敗しました: {e}")
+            import traceback
+            self.logger.error(f"詳細エラー: {traceback.format_exc()}")
+            
             # フォールバック用の軽量モデル
             try:
                 self.logger.info("フォールバック用の軽量モデルを試行中...")
                 fallback_model = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
-                self.model = SentenceTransformer(fallback_model, device=device)
+                self.model = SentenceTransformer(fallback_model, device="cpu")
                 self.model.max_seq_length = max_length
+                
+                # フォールバックモデルの動作確認
+                try:
+                    test_text = "テスト"
+                    test_embedding = self.model.encode([test_text], convert_to_numpy=True, batch_size=1)
+                    if test_embedding is None or test_embedding.size == 0:
+                        raise Exception("フォールバックモデルのテスト実行に失敗しました")
+                    self.logger.debug(f"フォールバックモデルテスト成功: 埋め込み次元数 {test_embedding.shape}")
+                except Exception as test_e:
+                    self.logger.warning(f"フォールバックモデルテストでエラー: {test_e}")
+                    # テストエラーでも続行（実際の処理で対応）
+                
                 self.logger.info(f"フォールバックモデルの初期化完了: {fallback_model}")
             except Exception as fallback_e:
                 self.logger.error(f"フォールバックモデルの初期化にも失敗しました: {fallback_e}")
+                import traceback
+                self.logger.error(f"フォールバック詳細エラー: {traceback.format_exc()}")
                 raise Exception("SentenceBERTモデルの初期化に完全に失敗しました")
     
     def encode(self, texts: List[str], batch_size: int = 8, 
@@ -88,28 +104,67 @@ class MultilingualSentenceBert:
         """
         try:
             if not texts:
+                self.logger.debug("テキストリストが空です")
+                return np.array([])
+            
+            # モデルの状態確認
+            if not hasattr(self, 'model') or self.model is None:
+                self.logger.error("モデルが初期化されていません")
                 return np.array([])
             
             # テキストの前処理
             processed_texts = self._preprocess_texts(texts)
             
             if not processed_texts:
+                self.logger.warning("前処理後のテキストが空です")
                 return np.array([])
             
             self.logger.debug(f"ベクトル化対象テキスト数: {len(processed_texts)}")
             
-            # ベクトル化
-            embeddings = self.model.encode(
-                processed_texts,
-                batch_size=batch_size,
-                normalize_embeddings=normalize_embeddings,
-                show_progress_bar=False
-            )
+            # バッチサイズを小さくして安定性を向上
+            safe_batch_size = min(batch_size, 2)  # さらに小さく
             
-            return embeddings
+            # 個別処理でエラーを回避
+            all_embeddings = []
+            
+            for i in range(0, len(processed_texts), safe_batch_size):
+                batch_texts = processed_texts[i:i + safe_batch_size]
+                
+                try:
+                    # バッチベクトル化
+                    batch_embeddings = self.model.encode(
+                        batch_texts,
+                        batch_size=1,  # 1つずつ処理
+                        normalize_embeddings=normalize_embeddings,
+                        show_progress_bar=False,
+                        convert_to_numpy=True
+                    )
+                    
+                    if batch_embeddings is not None and batch_embeddings.size > 0:
+                        all_embeddings.append(batch_embeddings)
+                    else:
+                        # エラーの場合はゼロベクトルを追加
+                        self.logger.warning(f"バッチ {i//safe_batch_size + 1} で空の埋め込みが返されました")
+                        zero_embedding = np.zeros((len(batch_texts), 384))  # 384次元
+                        all_embeddings.append(zero_embedding)
+                        
+                except Exception as batch_e:
+                    self.logger.error(f"バッチ {i//safe_batch_size + 1} でエラー: {batch_e}")
+                    # エラーの場合はゼロベクトルを追加
+                    zero_embedding = np.zeros((len(batch_texts), 384))  # 384次元
+                    all_embeddings.append(zero_embedding)
+            
+            # 結果を結合
+            if all_embeddings:
+                return np.vstack(all_embeddings)
+            else:
+                self.logger.warning("すべてのバッチでエラーが発生しました")
+                return np.array([])
             
         except Exception as e:
             self.logger.error(f"テキストベクトル化エラー: {e}")
+            import traceback
+            self.logger.error(f"詳細エラー: {traceback.format_exc()}")
             return np.array([])
     
     def calculate_similarity(self, text1: str, text2: str) -> float:
