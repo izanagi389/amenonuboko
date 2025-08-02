@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.openapi.utils import get_openapi
 
-import config
+from config import config
 from app.routers import main_router, related_title, tags, my_events
 
 # ログ設定

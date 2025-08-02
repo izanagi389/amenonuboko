@@ -10,7 +10,7 @@ import logging
 import requests
 from fastapi import APIRouter
 
-import config
+from config import config
 from app.utils.response import create_error_response, create_success_response, validate_parameter
 
 # 設定値

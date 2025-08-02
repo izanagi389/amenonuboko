@@ -10,7 +10,7 @@ import logging
 from fastapi import APIRouter, BackgroundTasks
 from fastapi_utils.tasks import repeat_every
 
-from app import scheduler
+from app.scheduler import init as scheduler_init
 from app.utils.response import create_success_response
 
 router = APIRouter()
@@ -26,7 +26,7 @@ def startup_event() -> None:
     """
     logging.info('スケジューラータスクを開始します')
     try:
-        BackgroundTasks().add_task(scheduler.init())
+        BackgroundTasks().add_task(scheduler_init())
     except Exception as e:
         logging.error(f"スケジューラータスクの実行に失敗しました: {e}")
 
