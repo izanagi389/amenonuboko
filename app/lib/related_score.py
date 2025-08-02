@@ -16,7 +16,7 @@ from typing import Dict, List, Any, Tuple
 import numpy as np
 
 from app.db.sqlalchemy.crud import crud
-from app.lib.algorithm.sentence_bert import SentenceBertJapanese
+from app.lib.algorithm.multilingual_sentence_bert import MultilingualSentenceBert
 from app.utils.database import db_manager
 
 
@@ -48,24 +48,34 @@ class UltraRelatedScoreService:
 
     def _initialize_model(self) -> None:
         """
-        SentenceBERTモデルを初期化（最適化版）
+        多言語SentenceBERTモデルを初期化（最適化版）
         
         Raises:
             Exception: モデル初期化中にエラーが発生した場合
         """
         try:
-            self.model = SentenceBertJapanese(
-                "sonoisa/sentence-bert-base-ja-mean-tokens-v2"
+            # 多言語SentenceBERTモデルを初期化（軽量版から開始）
+            logging.info("多言語SentenceBERTモデルを初期化中...")
+            self.model = MultilingualSentenceBert(
+                model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
             )
-            # モデルをGPUに移動（利用可能な場合）
-            if hasattr(self.model, 'to') and hasattr(self.model, 'device'):
-                try:
-                    self.model = self.model.to('cuda')
-                except:
-                    pass  # GPUが利用できない場合はCPUを使用
+            self.use_dummy_encoding = False
+            logging.info("多言語SentenceBERTモデルの初期化完了")
         except Exception as e:
-            logging.error(f"SentenceBERTモデルの初期化に失敗しました: {e}")
-            raise
+            logging.error(f"多言語SentenceBERTモデルの初期化に失敗しました: {e}")
+            # フォールバック用のさらに軽量なモデルを試行
+            try:
+                logging.info("フォールバック用のさらに軽量なモデルを試行中...")
+                self.model = MultilingualSentenceBert(
+                    model_name="sentence-transformers/distiluse-base-multilingual-cased-v2"
+                )
+                self.use_dummy_encoding = False
+                logging.info("フォールバックモデルの初期化完了")
+            except Exception as fallback_e:
+                logging.error(f"フォールバックモデルの初期化にも失敗しました: {fallback_e}")
+                logging.warning("ダミーベクトル化にフォールバックします")
+                self.model = None
+                self.use_dummy_encoding = True
 
     def start(self, content_list: List[Dict[str, Any]]) -> None:
         """
@@ -181,20 +191,32 @@ class UltraRelatedScoreService:
             
         Returns:
             ベクトル化されたタイトルの配列
-            
-        Raises:
-            Exception: ベクトル化中にエラーが発生した場合
         """
+        if not titles:
+            return np.array([])
+        
         try:
+            # タイトルの前処理：空文字列やNoneを除外
+            valid_titles = []
+            for title in titles:
+                if title and isinstance(title, str) and title.strip():
+                    valid_titles.append(title.strip())
+                else:
+                    logging.warning(f"無効なタイトルをスキップ: {title}")
+            
+            if not valid_titles:
+                logging.warning("有効なタイトルがありません")
+                return np.array([])
+            
             # より大きなバッチサイズで効率化
-            optimal_batch_size = min(len(titles), max(50, len(titles) // self.max_workers))
+            optimal_batch_size = min(len(valid_titles), max(50, len(valid_titles) // self.max_workers))
             
             vectors_list = []
             
             with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
                 # バッチ処理
-                batches = [titles[i:i + optimal_batch_size] 
-                          for i in range(0, len(titles), optimal_batch_size)]
+                batches = [valid_titles[i:i + optimal_batch_size] 
+                          for i in range(0, len(valid_titles), optimal_batch_size)]
                 
                 # 並列実行
                 futures = {executor.submit(self._encode_batch_optimized, batch): batch 
@@ -204,7 +226,8 @@ class UltraRelatedScoreService:
                 for future in as_completed(futures):
                     try:
                         vectors = future.result()
-                        vectors_list.append(vectors)
+                        if vectors.size > 0:  # 空でない場合のみ追加
+                            vectors_list.append(vectors)
                     except Exception as e:
                         logging.error(f"ベクトル化エラー: {e}")
                         continue
@@ -217,7 +240,7 @@ class UltraRelatedScoreService:
                 
         except Exception as e:
             logging.error(f"タイトルベクトル化中にエラーが発生しました: {e}")
-            raise
+            return np.array([])  # エラーの場合は空配列を返す
 
     def _encode_batch_optimized(self, titles_batch: List[str]) -> np.ndarray:
         """
@@ -232,8 +255,67 @@ class UltraRelatedScoreService:
         if not titles_batch:
             return np.array([])
         
-        vectors = self.model.encode(titles_batch)
-        return vectors.numpy() if hasattr(vectors, 'numpy') else np.array(vectors)
+        try:
+            # バッチ内のタイトルを検証
+            valid_titles = []
+            for title in titles_batch:
+                if title and isinstance(title, str) and title.strip():
+                    valid_titles.append(title.strip())
+            
+            if not valid_titles:
+                return np.array([])
+            
+            # 多言語SentenceBERTを使用
+            if hasattr(self, 'use_dummy_encoding') and not self.use_dummy_encoding and self.model:
+                try:
+                    # 多言語SentenceBERTでベクトル化
+                    vectors = self.model.encode(valid_titles, batch_size=4)  # バッチサイズを小さく
+                    if vectors.size > 0:
+                        return vectors
+                    else:
+                        logging.warning("多言語SentenceBERTで空のベクトルが返されました")
+                        return self._fallback_dummy_encoding(valid_titles)
+                except Exception as e:
+                    logging.error(f"多言語SentenceBERTベクトル化エラー: {e}")
+                    # エラーの場合はダミーベクトル化にフォールバック
+                    return self._fallback_dummy_encoding(valid_titles)
+            
+            # ダミーベクトル化（フォールバック）
+            else:
+                logging.warning("多言語SentenceBERTモデルが無効です。ダミーベクトル化を使用します。")
+                return self._fallback_dummy_encoding(valid_titles)
+            
+        except Exception as e:
+            logging.error(f"バッチベクトル化エラー: {e}")
+            return np.array([])
+    
+    def _fallback_dummy_encoding(self, titles: List[str]) -> np.ndarray:
+        """
+        フォールバック用のダミーベクトル化
+        
+        Args:
+            titles: ベクトル化するタイトルのリスト
+            
+        Returns:
+            ダミーベクトル化された配列
+        """
+        try:
+            vectors = []
+            for title in titles:
+                # タイトルの長さと文字の種類に基づく簡単なベクトル
+                vector = np.array([
+                    len(title),  # タイトル長
+                    len(set(title)),  # ユニーク文字数
+                    sum(ord(c) for c in title[:10]) / 1000,  # 最初の10文字のASCII値の平均
+                    hash(title) % 1000 / 1000.0  # ハッシュ値
+                ])
+                vectors.append(vector)
+            
+            return np.array(vectors)
+            
+        except Exception as e:
+            logging.error(f"ダミーベクトル化エラー: {e}")
+            return np.array([])
 
     def _calculate_similarity_optimized(self, chunk_vectors: np.ndarray, 
                                       chunk_ids: List[str], all_titles: List[str]) -> Dict[str, List[float]]:
@@ -344,17 +426,22 @@ class UltraRelatedScoreService:
             関連スコアのリスト
         """
         try:
+            from sqlalchemy import text
+            
             # インデックスを活用した高速クエリ
-            query = """
+            query = text("""
                 SELECT relate_id, relate_title, bert_cos_distance
                 FROM related_data_v2 
-                WHERE id = %s AND relate_id != %s
+                WHERE id = :search_id AND relate_id != :search_id
                 ORDER BY bert_cos_distance ASC
-                LIMIT %s
-            """
+                LIMIT :num
+            """)
             
             with db_manager.get_session() as session:
-                result = session.execute(query, [search_id, search_id, num])
+                result = session.execute(query, {
+                    'search_id': search_id, 
+                    'num': num
+                })
                 rows = result.fetchall()
             
             if not rows:

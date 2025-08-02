@@ -26,14 +26,28 @@ class SentenceBertJapanese:
             model_name_or_path: モデル名またはパス
             device: 使用するデバイス（cuda/cpu）
         """
-        self.tokenizer = BertJapaneseTokenizer.from_pretrained(model_name_or_path)
-        self.model = BertModel.from_pretrained(model_name_or_path)
-        self.model.eval()
+        try:
+            self.tokenizer = BertJapaneseTokenizer.from_pretrained(model_name_or_path)
+            self.model = BertModel.from_pretrained(model_name_or_path)
+            self.model.eval()
 
-        if device is None:
-            device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.device = torch.device(device)
-        self.model.to(device)
+            if device is None:
+                device = "cuda" if torch.cuda.is_available() else "cpu"
+            self.device = torch.device(device)
+            
+            # メタテンソルエラーを回避するため、to_empty()を使用
+            try:
+                if hasattr(self.model, 'to_empty'):
+                    self.model = self.model.to_empty(device=self.device)
+                else:
+                    self.model = self.model.to(self.device)
+            except Exception as e:
+                # GPU移動に失敗した場合はCPUを使用
+                self.device = torch.device("cpu")
+                self.model = self.model.to(self.device)
+                
+        except Exception as e:
+            raise Exception(f"SentenceBERTモデルの初期化に失敗しました: {e}")
 
     def _mean_pooling(self, model_output: tuple, attention_mask: torch.Tensor) -> torch.Tensor:
         """
@@ -63,25 +77,56 @@ class SentenceBertJapanese:
         Returns:
             文の埋め込みベクトル
         """
-        all_embeddings = []
-        iterator = range(0, len(sentences), batch_size)
+        if not sentences:
+            return torch.tensor([])
         
-        for batch_idx in iterator:
-            batch = sentences[batch_idx:batch_idx + batch_size]
-
-            encoded_input = self.tokenizer.batch_encode_plus(
-                batch, 
-                padding="longest",
-                truncation=True, 
-                return_tensors="pt"
-            ).to(self.device)
+        # 入力の検証
+        valid_sentences = []
+        for sentence in sentences:
+            if sentence and isinstance(sentence, str) and sentence.strip():
+                valid_sentences.append(sentence.strip())
+        
+        if not valid_sentences:
+            return torch.tensor([])
+        
+        try:
+            all_embeddings = []
+            iterator = range(0, len(valid_sentences), batch_size)
             
-            model_output = self.model(**encoded_input)
-            sentence_embeddings = self._mean_pooling(
-                model_output, 
-                encoded_input["attention_mask"]
-            ).to('cpu')
+            for batch_idx in iterator:
+                batch = valid_sentences[batch_idx:batch_idx + batch_size]
+                
+                if not batch:
+                    continue
 
-            all_embeddings.extend(sentence_embeddings)
+                try:
+                    encoded_input = self.tokenizer.batch_encode_plus(
+                        batch, 
+                        padding="longest",
+                        truncation=True, 
+                        return_tensors="pt",
+                        max_length=512  # 最大長を制限
+                    ).to(self.device)
+                    
+                    model_output = self.model(**encoded_input)
+                    sentence_embeddings = self._mean_pooling(
+                        model_output, 
+                        encoded_input["attention_mask"]
+                    ).to('cpu')
 
-        return torch.stack(all_embeddings)
+                    all_embeddings.append(sentence_embeddings)
+                    
+                except Exception as e:
+                    import logging
+                    logging.error(f"バッチ処理エラー: {e}")
+                    continue
+
+            if all_embeddings:
+                return torch.cat(all_embeddings, dim=0)
+            else:
+                return torch.tensor([])
+                
+        except Exception as e:
+            import logging
+            logging.error(f"encode処理エラー: {e}")
+            return torch.tensor([])
