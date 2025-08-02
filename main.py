@@ -9,7 +9,7 @@ import logging
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.middleware.trustedhost import TrustedHostMiddleware
+
 from fastapi.openapi.utils import get_openapi
 
 from config import config
@@ -55,11 +55,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# TrustedHostミドルウェア（必要に応じて有効化）
-# app.add_middleware(
-#     TrustedHostMiddleware, 
-#     allowed_hosts=["config.SITE_ROOT_URL"],
-# )
+
 
 # ルーターの登録
 app.include_router(main_router.router)
