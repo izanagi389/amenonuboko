@@ -85,8 +85,17 @@ class TopicProcessor:
         processed_contents = []
         
         for content in content_list:
+            # データ型チェック
+            if not isinstance(content, dict):
+                self.logger.warning(f"無効なデータ形式をスキップ: {type(content)}")
+                continue
+                
             # 不要なテキストを削除
-            cleaned_content = TextShapping.remove_unnecessary_text(content.get('blogContent', ''))
+            blog_content = content.get('blogContent', '')
+            if not isinstance(blog_content, str):
+                blog_content = str(blog_content) if blog_content is not None else ''
+            
+            cleaned_content = TextShapping.remove_unnecessary_text(blog_content)
             
             processed_contents.append({
                 'id': content.get('id', ''),
@@ -161,6 +170,11 @@ class TopicProcessor:
         """
         self.logger.info("LDA処理開始")
         
+        # 空のドキュメントリストの場合は空のトピックリストを返す
+        if not cleaned_docs or all(len(doc) == 0 for doc in cleaned_docs):
+            self.logger.warning("処理可能なドキュメントがありません")
+            return []
+        
         # バイグラムをドキュメントに変換
         docs_with_bigrams = LDA.bigram2docs(cleaned_docs)
         
@@ -172,15 +186,19 @@ class TopicProcessor:
         
         # LDAモデルを読み込み
         self.logger.info("LDAモデル読み込み開始")
-        model = LDA.load(dictionary, corpus)
-        self.logger.info("LDAモデル読み込み完了")
-        
-        # トピックを抽出
-        self.logger.info("トピック抽出開始")
-        topics = LDA.topics(model, corpus)
-        self.logger.info(f"トピック抽出完了: {len(topics)}個のトピック")
-        
-        return topics
+        try:
+            model = LDA.load(dictionary, corpus)
+            self.logger.info("LDAモデル読み込み完了")
+            
+            # トピックを抽出
+            self.logger.info("トピック抽出開始")
+            topics = LDA.topics(model, corpus)
+            self.logger.info(f"トピック抽出完了: {len(topics)}個のトピック")
+            
+            return topics
+        except Exception as e:
+            self.logger.error(f"LDA処理中にエラーが発生しました: {e}")
+            return []
 
     def _generate_corpus(self, processed_contents: List[Dict[str, Any]], topics: List[str]) -> List[Dict[str, Any]]:
         """
@@ -195,21 +213,30 @@ class TopicProcessor:
         """
         self.logger.info("コーパス生成開始")
         
-        # 正規表現パターンをコンパイル
-        pattern = re.compile("|".join(topics))
-        
         corpus_data = []
         
-        for content in processed_contents:
-            # トピックを抽出
-            matches = re.findall(pattern, content['blogContent'])
-            unique_matches = list(set(matches))
-            corpus_text = ",".join(unique_matches) if unique_matches else ""
+        # トピックリストが空の場合は空のコーパスを生成
+        if not topics:
+            self.logger.warning("トピックリストが空のため、空のコーパスを生成します")
+            for content in processed_contents:
+                corpus_data.append({
+                    'id': content['id'],
+                    'corpus': ""
+                })
+        else:
+            # 正規表現パターンをコンパイル
+            pattern = re.compile("|".join(topics))
             
-            corpus_data.append({
-                'id': content['id'],
-                'corpus': corpus_text
-            })
+            for content in processed_contents:
+                # トピックを抽出
+                matches = re.findall(pattern, content['blogContent'])
+                unique_matches = list(set(matches))
+                corpus_text = ",".join(unique_matches) if unique_matches else ""
+                
+                corpus_data.append({
+                    'id': content['id'],
+                    'corpus': corpus_text
+                })
         
         self.logger.info(f"コーパス生成完了: {len(corpus_data)}件")
         return corpus_data

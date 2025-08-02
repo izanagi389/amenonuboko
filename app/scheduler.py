@@ -9,7 +9,7 @@ import datetime
 import logging
 from typing import List, Dict, Any
 
-import config
+from config import config
 from app.lib.contents import microcms
 from app.lib.topic import topic
 from app.lib.related_score import create_score
@@ -75,7 +75,18 @@ def _fetch_content_data() -> List[Dict[str, Any]]:
         columns = ["id", "title", "blogContent"]
         
         logging.info("コンテンツデータを取得中...")
-        content_list = microcms.getData(url, api_key, columns)
+        raw_content_list = microcms.getData(url, api_key, columns)
+        
+        # リスト形式のデータを辞書形式に変換
+        content_list = []
+        for content in raw_content_list:
+            if len(content) >= 3:  # id, title, blogContentの3つの要素があることを確認
+                content_dict = {
+                    'id': content[0],
+                    'title': content[1],
+                    'blogContent': content[2]
+                }
+                content_list.append(content_dict)
         
         logging.info(f"コンテンツデータ取得完了: {len(content_list)}件")
         return content_list
