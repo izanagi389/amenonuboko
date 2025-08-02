@@ -1,14 +1,14 @@
--- amenonuboko データベースの初期化スクリプト
+-- amenonuboko データベースの初期化スクリプト（テンプレート）
 
 -- データベースの作成（既に存在する場合はスキップ）
-CREATE DATABASE IF NOT EXISTS amenonuboko CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE IF NOT EXISTS ${MYSQL_DATABASE} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- データベースの使用
-USE amenonuboko;
+USE ${MYSQL_DATABASE};
 
 -- ユーザーの作成と権限付与
-CREATE USER IF NOT EXISTS 'amenonuboko_user'@'%' IDENTIFIED BY 'amenonuboko_password';
-GRANT ALL PRIVILEGES ON amenonuboko.* TO 'amenonuboko_user'@'%';
+CREATE USER IF NOT EXISTS '${MYSQL_USER}'@'%' IDENTIFIED BY '${MYSQL_PASSWORD}';
+GRANT ALL PRIVILEGES ON ${MYSQL_DATABASE}.* TO '${MYSQL_USER}'@'%';
 FLUSH PRIVILEGES;
 
 -- 関連データテーブルの作成
@@ -74,4 +74,4 @@ INSERT IGNORE INTO topic_corpus (id, corpus) VALUES
 ('test_0002', 'Python機械学習 深層学習 ニューラルネットワーク');
 
 -- 権限の確認
-SHOW GRANTS FOR 'amenonuboko_user'@'%'; 
+SHOW GRANTS FOR '${MYSQL_USER}'@'%'; 

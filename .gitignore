@@ -265,6 +265,9 @@ data/
 config_local.py
 settings_local.py
 
+# データベース初期化ファイル（機密情報を含む）
+mysql/init/01-init.sql
+
 # Docker関連
 .dockerignore
 
