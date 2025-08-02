@@ -288,4 +288,4 @@ site/
 # 依存関係ロックファイル（必要に応じて）
 # requirements.txt
 # Pipfile.lock
-# poetry.lock 
+# poetry.lock

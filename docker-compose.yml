@@ -18,9 +18,10 @@ services:
       - CONNPASS_NICKNAME=your_connpass_nickname
       - SITE_ROOT_URL=http://localhost:8000
     volumes:
+      # 開発時のファイル変更を反映（本番環境では削除）
       - ./app:/app/app
-      - ./config.py:/app/config.py
       - ./main.py:/app/main.py
+      - ./config.py:/app/config.py
     depends_on:
       - db
     restart: unless-stopped
