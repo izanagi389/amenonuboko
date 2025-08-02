@@ -1,15 +1,41 @@
+"""
+LDA（Latent Dirichlet Allocation）処理モジュール
+
+このモジュールは、トピックモデリングのためのLDA処理を提供します。
+"""
+
+from typing import List, Any, Optional
 from gensim.models import LdaModel, Phrases
 from gensim.corpora import Dictionary
 
 
-class LDA():
+class LDA:
+    """
+    LDA（Latent Dirichlet Allocation）処理クラス
+    
+    トピックモデリングのためのLDA処理を実行するクラスです。
+    """
 
-    def __init__(self):
-        return
-
-    def load(dictionary, corpus, num_topics=5, passes=10, iterations=400, eval_every=None):
-        # Make an index to word dictionary.
-        temp = dictionary[0]  # This is only to "load" the dictionary.
+    @staticmethod
+    def load(dictionary: Dictionary, corpus: List[List[tuple]], 
+             num_topics: int = 5, passes: int = 10, iterations: int = 400, 
+             eval_every: Optional[int] = None) -> LdaModel:
+        """
+        LDAモデルを読み込みまたは作成
+        
+        Args:
+            dictionary: 辞書オブジェクト
+            corpus: コーパスデータ
+            num_topics: トピック数
+            passes: パス数
+            iterations: 反復回数
+            eval_every: 評価間隔
+            
+        Returns:
+            LDAモデル
+        """
+        # 辞書をロード（インデックス作成のため）
+        temp = dictionary[0]  # 辞書をロード
         id2word = dictionary.id2token
 
         model = LdaModel(
@@ -25,43 +51,77 @@ class LDA():
 
         return model
 
-    # Compute bigrams.
-    # Add bigrams and trigrams to docs (only ones that appear 20 times or more).
-    def bigram2docs(docs: list,  min_count=20) -> list:
+    @staticmethod
+    def bigram2docs(docs: List[List[str]], min_count: int = 20) -> List[List[str]]:
+        """
+        バイグラムをドキュメントに変換
+        
+        Args:
+            docs: ドキュメントリスト
+            min_count: 最小出現回数
+            
+        Returns:
+            バイグラム追加済みドキュメントリスト
+        """
         bigram = Phrases(docs, min_count)
+        
         for idx in range(len(docs)):
             for token in bigram[docs[idx]]:
                 if '_' in token:
-                    # Token is a bigram, add to document.
+                    # トークンがバイグラムの場合、ドキュメントに追加
                     docs[idx].append(token)
 
         return docs
 
-    def get_dictionary(docs):
-        # Remove rare and common tokens.
-        # Create a dictionary representation of the documents.
+    @staticmethod
+    def get_dictionary(docs: List[List[str]]) -> Dictionary:
+        """
+        辞書を作成
+        
+        Args:
+            docs: ドキュメントリスト
+            
+        Returns:
+            作成された辞書
+        """
+        # 辞書を作成
         dictionary = Dictionary(docs)
 
-        # Filter out words that occur less than 20 documents, or more than 50% of the documents.
+        # 稀すぎる単語（5文書未満）と頻出すぎる単語（50%以上の文書）を除外
         dictionary.filter_extremes(no_below=5, no_above=0.5)
 
         return dictionary
 
-
-
-    def get_corpus(dictionary, docs):
-        # Bag-of-words representation of the documents.
+    @staticmethod
+    def get_corpus(dictionary: Dictionary, docs: List[List[str]]) -> List[List[tuple]]:
+        """
+        コーパスを作成
+        
+        Args:
+            dictionary: 辞書オブジェクト
+            docs: ドキュメントリスト
+            
+        Returns:
+            作成されたコーパス
+        """
+        # ドキュメントのBag-of-words表現
         corpus = [dictionary.doc2bow(doc) for doc in docs]
 
         return corpus
 
-
-    def topics(model, corpus) -> any:
+    @staticmethod
+    def topics(model: LdaModel, corpus: List[List[tuple]]) -> List[str]:
+        """
+        トピックを抽出
+        
+        Args:
+            model: LDAモデル
+            corpus: コーパスデータ
+            
+        Returns:
+            抽出されたトピックリスト
+        """
         top_topics = model.top_topics(corpus)
-
-        # Average topic coherence is the sum of topic coherences of all topics, divided by the number of topics.
-        # avg_topic_coherence = sum([t[1] for t in top_topics]) / num_topics
-        # print('Average topic coherence: %.4f.' % avg_topic_coherence)
 
         topic_list = []
 
@@ -71,6 +131,7 @@ class LDA():
                     for t in tt:
                         topic_list.append(t[1])
 
+        # 重複を除去
         topic_list = list(set(topic_list))
 
         return topic_list
