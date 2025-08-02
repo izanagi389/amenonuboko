@@ -5,18 +5,20 @@ services:
     container_name: amenonuboko-api
     ports:
       - "8000:8000"
+    env_file:
+      - .env
     environment:
-      - MYSQL_USER=amenonuboko_user
-      - MYSQL_PASSWORD=amenonuboko_password
-      - MYSQL_HOST=db
-      - MYSQL_DATABASE=amenonuboko
-      - MYSQL_PORT=3306
-      - MICROCMS_URL=https://your-microcms.microcms.io/api/v1/contents
-      - MICROCMS_API_KEY=your_microcms_api_key
-      - LIMIT=100
-      - CONNPASS_URL=https://connpass.com/api/v1/event/
-      - CONNPASS_NICKNAME=your_connpass_nickname
-      - SITE_ROOT_URL=http://localhost:8000
+      - MYSQL_USER=${MYSQL_USER:-amenonuboko_user}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-amenonuboko_password}
+      - MYSQL_HOST=${MYSQL_HOST:-db}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-amenonuboko}
+      - MYSQL_PORT=${MYSQL_PORT:-3306}
+      - MICROCMS_URL=${MICROCMS_URL:-https://your-microcms.microcms.io/api/v1/contents}
+      - MICROCMS_API_KEY=${MICROCMS_API_KEY:-your_microcms_api_key}
+      - LIMIT=${LIMIT:-100}
+      - CONNPASS_URL=${CONNPASS_URL:-https://connpass.com/api/v1/event/}
+      - CONNPASS_NICKNAME=${CONNPASS_NICKNAME:-your_connpass_nickname}
+      - SITE_ROOT_URL=${SITE_ROOT_URL:-http://localhost:8000}
     volumes:
       # 開発時のファイル変更を反映（本番環境では削除）
       - ./app:/app/app
