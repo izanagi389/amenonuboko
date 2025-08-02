@@ -1,20 +1,52 @@
+"""
+タグルーターモジュール
+
+このモジュールは、タグデータ取得のためのAPIエンドポイントを提供します。
+"""
+
 from fastapi import APIRouter
 
-from fastapi.responses import JSONResponse
-from app.db.sqlalchemy.crud import crud 
-import json
-
+from app.db.sqlalchemy.crud import crud
+from app.utils.response import create_error_response, create_success_response, validate_parameter
 
 router = APIRouter()
 
+
 @router.get("/amenonuboko/v1/tags/")
 async def read_root():
-    return json.dumps(["パスパラメーターにブログIDを指定してください！"], indent=2, ensure_ascii=False)
+    """
+    パラメータなしのエンドポイント
+    
+    Returns:
+        エラーレスポンス（ブログIDが指定されていない場合）
+    """
+    return create_error_response("パスパラメーターにブログIDを指定してください！")
 
 
 @router.get("/amenonuboko/v1/tags/{search_id}")
 async def read_item(search_id: str):
-    if (search_id == None):
-        return json.dumps(["パラメータがありません！"], indent=2, ensure_ascii=False)
-
-    return JSONResponse(crud().get_topic_data_for_df(search_id))
+    """
+    タグデータを取得
+    
+    Args:
+        search_id: 検索対象のブログID
+        
+    Returns:
+        タグデータまたはエラーレスポンス
+    """
+    # パラメータバリデーション
+    error_response = validate_parameter(search_id, "ブログID")
+    if error_response:
+        return error_response
+    
+    try:
+        # トピックデータを取得
+        result = crud().get_topic_data_for_df(search_id)
+        
+        # エラーレスポンスの場合はそのまま返す
+        if "error" in result:
+            return create_error_response(result["error"], 404)
+        
+        return create_success_response(result)
+    except Exception as e:
+        return create_error_response(f"データの取得に失敗しました: {str(e)}", 500)
