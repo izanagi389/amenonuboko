@@ -19,16 +19,8 @@ if ! command -v docker compose &> /dev/null; then
     exit 1
 fi
 
-# 開発環境の起動
-if [ "$1" = "dev" ]; then
-    echo "🔧 開発環境を起動します..."
-    docker compose --profile dev up -d
-    
-    echo "📊 phpMyAdmin: http://localhost:8080"
-    echo "   - ユーザー: amenonuboko_user"
-    echo "   - パスワード: amenonuboko_password"
-    
-elif [ "$1" = "prod" ]; then
+# 環境の起動
+if [ "$1" = "prod" ]; then
     echo "🏭 本番環境を起動します..."
     docker compose --profile production up -d
     

@@ -66,28 +66,6 @@ services:
       start_period: 30s
     command: --default-authentication-plugin=mysql_native_password
 
-  # phpMyAdmin (開発用)
-  phpmyadmin:
-    image: phpmyadmin/phpmyadmin:latest
-    container_name: amenonuboko-phpmyadmin
-    env_file:
-      - .env
-    environment:
-      - PMA_HOST=db
-      - PMA_PORT=3306
-      - PMA_USER=${MYSQL_USER}
-      - PMA_PASSWORD=${MYSQL_PASSWORD}
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
-    ports:
-      - "8080:80"
-    depends_on:
-      - db
-    restart: unless-stopped
-    networks:
-      - amenonuboko-network
-    profiles:
-      - dev
-
   # Nginx (リバースプロキシ、本番用)
   nginx:
     image: nginx:alpine
