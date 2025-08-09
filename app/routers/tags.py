@@ -23,25 +23,25 @@ async def read_root():
     return create_error_response("パスパラメーターにブログIDを指定してください！")
 
 
-@router.get("/amenonuboko/v1/tags/{search_id}")
-async def read_item(search_id: str):
+@router.get("/amenonuboko/v1/tags/{blog_id}")
+async def read_item(blog_id: str):
     """
     タグデータを取得
     
     Args:
-        search_id: 検索対象のブログID
+        blog_id: 検索対象のブログID
         
     Returns:
         タグデータまたはエラーレスポンス
     """
     # パラメータバリデーション
-    error_response = validate_parameter(search_id, "ブログID")
+    error_response = validate_parameter(blog_id, "ブログID")
     if error_response:
         return error_response
     
     try:
         # トピックデータを取得
-        result = crud().get_topic_data_for_df(search_id)
+        result = crud().get_topic_data_for_df(blog_id)
         
         # エラーレスポンスの場合はそのまま返す
         if "error" in result:

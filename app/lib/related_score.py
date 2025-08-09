@@ -28,7 +28,7 @@ class UltraRelatedScoreService:
     """
 
     def __init__(self, max_workers: int = None, batch_size: int = 2000, 
-                 memory_limit_mb: int = 1024):
+                 memory_limit_mb: int = 4096):
         """
         UltraRelatedScoreServiceクラスの初期化
         
@@ -414,13 +414,13 @@ class UltraRelatedScoreService:
             logging.error(f"データベース保存中にエラーが発生しました: {e}")
             raise
 
-    def get_scores(self, num: int, search_id: str) -> List[Dict[str, Any]]:
+    def get_scores(self, num: int, blog_id: str) -> List[Dict[str, Any]]:
         """
         関連スコアを取得（超高速版）
         
         Args:
             num: 取得件数
-            search_id: 検索ID
+            blog_id: 検索ID
             
         Returns:
             関連スコアのリスト
@@ -432,14 +432,14 @@ class UltraRelatedScoreService:
             query = text("""
                 SELECT relate_id, relate_title, bert_cos_distance
                 FROM related_data_v2 
-                WHERE id = :search_id AND relate_id != :search_id
+                WHERE id = :blog_id AND relate_id != :blog_id
                 ORDER BY bert_cos_distance ASC
                 LIMIT :num
             """)
             
             with db_manager.get_session() as session:
                 result = session.execute(query, {
-                    'search_id': search_id, 
+                    'blog_id': blog_id, 
                     'num': num
                 })
                 rows = result.fetchall()
@@ -493,8 +493,10 @@ class MemoryMonitor:
             memory_mb = process.memory_info().rss / 1024 / 1024
             
             if memory_mb > self.limit_mb:
-                logging.warning(f"メモリ使用量が上限を超えています: {memory_mb:.1f}MB > {self.limit_mb}MB")
+                logging.warning(f"メモリ使用量が上限を超えています: {memory_mb:.1f}MB > {self.limit_mb}MB (制限: {self.limit_mb}MB)")
+                logging.info("ガベージコレクションを実行中...")
                 gc.collect()
+                logging.info("ガベージコレクション完了")
                 
         except ImportError:
             pass  # psutilが利用できない場合はスキップ

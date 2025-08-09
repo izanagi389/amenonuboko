@@ -68,12 +68,12 @@ class CRUDService:
         """
         self.db_manager.bulk_insert(table_name, columns, values)
 
-    def get_topic_data_for_df(self, search_id: str) -> Dict[str, Any]:
+    def get_topic_data_for_df(self, blog_id: str) -> Dict[str, Any]:
         """
         トピックデータを取得
         
         Args:
-            search_id: 検索ID
+            blog_id: 検索ID
             
         Returns:
             トピックデータの辞書
@@ -81,21 +81,21 @@ class CRUDService:
         query = """
             SELECT id, corpus 
             FROM topic_corpus 
-            WHERE id = :search_id
+            WHERE id = :blog_id
         """
-        result = self.db_manager.execute_query_dict(query, {'search_id': search_id})
+        result = self.db_manager.execute_query_dict(query, {'blog_id': blog_id})
         
         if not result:
             return {"error": "データが見つかりません"}
         
         return result[0]
 
-    def get_relate_score_for_df(self, search_id: str) -> List[Dict[str, Any]]:
+    def get_relate_score_for_df(self, blog_id: str) -> List[Dict[str, Any]]:
         """
         関連スコアデータを取得
         
         Args:
-            search_id: 検索ID
+            blog_id: 検索ID
             
         Returns:
             関連スコアデータのリスト
@@ -103,16 +103,16 @@ class CRUDService:
         query = """
             SELECT id, relate_id, relate_title, bert_cos_distance 
             FROM related_data_v2 
-            WHERE id = :search_id
+            WHERE id = :blog_id
         """
-        return self.db_manager.execute_query_dict(query, {'search_id': search_id})
+        return self.db_manager.execute_query_dict(query, {'blog_id': blog_id})
 
-    def get_relate_score_for_numpy(self, search_id: str) -> List[tuple]:
+    def get_relate_score_for_numpy(self, blog_id: str) -> List[tuple]:
         """
         関連スコアデータをNumPy形式で取得
         
         Args:
-            search_id: 検索ID
+            blog_id: 検索ID
             
         Returns:
             関連スコアデータのタプルリスト
@@ -120,9 +120,9 @@ class CRUDService:
         query = """
             SELECT id, relate_id, relate_title, bert_cos_distance 
             FROM related_data_v2 
-            WHERE id = :search_id
+            WHERE id = :blog_id
         """
-        return self.db_manager.execute_query(query, {'search_id': search_id})
+        return self.db_manager.execute_query(query, {'blog_id': blog_id})
 
     def insert_related_data(self, data: List[Dict[str, Any]]) -> None:
         """
@@ -173,12 +173,12 @@ class CRUDService:
         # 一括挿入
         self.db_manager.bulk_insert("related_data_v2", columns, values, batch_size=5000)
 
-    def get_related_scores_paginated(self, search_id: str, limit: int = 10, offset: int = 0) -> Dict[str, Any]:
+    def get_related_scores_paginated(self, blog_id: str, limit: int = 10, offset: int = 0) -> Dict[str, Any]:
         """
         関連スコアをページネーション付きで取得
         
         Args:
-            search_id: 検索ID
+            blog_id: 検索ID
             limit: 取得件数制限
             offset: オフセット
             
@@ -189,21 +189,21 @@ class CRUDService:
         count_query = """
             SELECT COUNT(*) 
             FROM related_data_v2 
-            WHERE id = :search_id AND relate_id != :search_id
+            WHERE id = :blog_id AND relate_id != :blog_id
         """
-        count_result = self.db_manager.execute_query(count_query, {'search_id': search_id})
+        count_result = self.db_manager.execute_query(count_query, {'blog_id': blog_id})
         total_count = count_result[0][0] if count_result else 0
         
         # データを取得
         data_query = """
             SELECT relate_id, relate_title, bert_cos_distance
             FROM related_data_v2 
-            WHERE id = :search_id AND relate_id != :search_id
+            WHERE id = :blog_id AND relate_id != :blog_id
             ORDER BY bert_cos_distance ASC
             LIMIT :limit OFFSET :offset
         """
         data = self.db_manager.execute_query_dict(data_query, {
-            'search_id': search_id,
+            'blog_id': blog_id,
             'limit': limit,
             'offset': offset
         })

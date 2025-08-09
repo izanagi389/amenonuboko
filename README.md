@@ -14,6 +14,17 @@ cp env.example .env
 vim .env
 ```
 
+**重要な環境変数:**
+
+- `MYSQL_ROOT_PASSWORD`: MySQL rootパスワード
+- `MYSQL_DATABASE`: データベース名
+- `MYSQL_USER`: データベースユーザー名
+- `MYSQL_PASSWORD`: データベースパスワード
+- `MYSQL_HOST`: データベースホスト（通常は`db`）
+- `MYSQL_PORT`: データベースポート（通常は`3306`）
+- `MICROCMS_URL`: MicroCMS API URL
+- `MICROCMS_API_KEY`: MicroCMS API キー
+
 ### 2. データベース初期化
 
 ```bash
@@ -36,9 +47,9 @@ docker compose up -d
 
 ## セキュリティ
 
+- `.env`ファイルは機密情報を含むため、Gitから除外されています
 - `mysql/init/01-init.sql`は機密情報を含むため、Gitから除外されています
 - 本番環境では、適切なパスワードとユーザー名を設定してください
-- テンプレートファイル（`01-init.sql.template`）を参考に設定してください
 
 ## API エンドポイント
 

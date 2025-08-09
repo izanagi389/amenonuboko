@@ -23,25 +23,25 @@ async def read_root():
     return create_error_response("パスパラメーターにブログIDを指定してください！")
 
 
-@router.get("/amenonuboko/v2/related_title/{search_id}")
-async def read_item(search_id: str):
+@router.get("/amenonuboko/v2/related_title/{blog_id}")
+async def read_item(blog_id: str):
     """
     関連タイトルを取得
     
     Args:
-        search_id: 検索対象のブログID
+        blog_id: 検索対象のブログID
         
     Returns:
         関連タイトルのリストまたはエラーレスポンス
     """
     # パラメータバリデーション
-    error_response = validate_parameter(search_id, "ブログID")
+    error_response = validate_parameter(blog_id, "ブログID")
     if error_response:
         return error_response
     
     try:
         # 関連スコアを取得
-        result = create_score().get_scores(5, search_id)
+        result = create_score().get_scores(5, blog_id)
         return create_success_response(result)
     except Exception as e:
         return create_error_response(f"データの取得に失敗しました: {str(e)}", 500)
