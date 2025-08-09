@@ -32,10 +32,6 @@ elif [ "$1" = "prod" ]; then
     echo "🏭 本番環境を起動します..."
     docker compose --profile production up -d
     
-elif [ "$1" = "cache" ]; then
-    echo "⚡ キャッシュ付きで起動します..."
-    docker compose --profile cache up -d
-    
 else
     echo "🔧 基本環境を起動します..."
     docker compose up -d
